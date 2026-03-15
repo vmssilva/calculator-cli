@@ -5,7 +5,7 @@ A simple **command-line calculator written in Java**.
 It evaluates mathematical expressions by delegating parsing and AST evaluation to the companion project:
 
 ➡ Core parser and AST engine:
-[`calculator-api`](https://github.com/vmssilva/calculator-api)
+[`calculator-engine`](https://github.com/vmssilva/calculator-engine)
 
 This CLI acts as a **thin interactive interface** for the parser.
 
@@ -21,7 +21,7 @@ The CLI only handles:
 * commands
 * input handling
 
-The actual parsing and evaluation are handled by the **calculator-api**.
+The actual parsing and evaluation are handled by the **calculator-engine**.
 
 ---
 
@@ -59,7 +59,7 @@ The actual parsing and evaluation are handled by the **calculator-api**.
 # Dependency
 
 This project depends on:
-[`calculator-api`](https://github.com/vmssilva/calculator-api)
+[`calculator-engine`](https://github.com/vmssilva/calculator-engine)
 
 The dependency is responsible for:
 
@@ -265,17 +265,17 @@ Build and run the **calculator-cli** from source.
 
 The CLI depends on:
 
-➡ calculator-api
+➡ calculator-engine
 
 Run the following commands:
 
 ```bash
 # Clone the projects
-git clone https://github.com/vmssilva/calculator-api.git
+git clone https://github.com/vmssilva/calculator-engine.git
 git clone https://github.com/vmssilva/calculator-cli.git
 
 # Build and install the API
-cd calculator-api
+cd calculator-engine
 mvn clean install
 
 # Build the CLI with dependencies
@@ -293,13 +293,13 @@ java -jar target/calculator-cli-1.0-SNAPSHOT.jar
 You can verify that the API classes were bundled into the JAR:
 
 ```bash
-jar tf target/calculator-cli-1.0-SNAPSHOT.jar | grep calculator/api
+jar tf target/calculator-cli-1.0-SNAPSHOT.jar | grep calculator/engine
 ```
 
 Expected output includes classes like:
 
 ```
-com/github/vmssilva/calculator/api/parser/RecursiveAstParser.class
+com/github/vmssilva/calculator/engine/parser/RecursiveAstParser.class
 ```
 
 ---

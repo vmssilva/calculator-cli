@@ -3,8 +3,8 @@ package com.github.vmssilva.calculator.cli;
 import java.io.IOException;
 import java.util.Scanner;
 
-import com.github.vmssilva.calculator.api.ast.Expression;
-import com.github.vmssilva.calculator.api.parser.RecursiveAstParser;
+import com.github.vmssilva.calculator.engine.ast.Expression;
+import com.github.vmssilva.calculator.engine.parser.RecursiveAstParser;
 
 public class CalculatorApp {
 
@@ -71,7 +71,8 @@ public class CalculatorApp {
       }
     }
 
-    scanner.close();
+    if (scanner != null)
+      scanner.close();
   }
 
   private static void clear() {
