@@ -6,11 +6,15 @@ import java.util.List;
 import com.github.vmssilva.calculator.cli.helper.Ansi;
 import com.github.vmssilva.calculator.cli.repl.Key;
 import com.github.vmssilva.calculator.cli.repl.Renderer;
+import com.github.vmssilva.calculator.cli.repl.command.Command;
 import com.github.vmssilva.calculator.cli.repl.KeyType;
 import com.github.vmssilva.calculator.cli.repl.state.State;
 import com.github.vmssilva.calculator.cli.repl.terminal.TerminalControl;
 import com.github.vmssilva.calculator.cli.repl.terminal.UnixTerminal;
 import com.github.vmssilva.calculator.engine.context.ApplicationContext;
+import com.github.vmssilva.calculator.engine.exception.CalculatorLexerException;
+import com.github.vmssilva.calculator.engine.exception.CalculatorParserException;
+import com.github.vmssilva.calculator.engine.exception.ExecutionErrorException;
 import com.github.vmssilva.calculator.engine.exception.ValueErrorException;
 import com.github.vmssilva.calculator.engine.runtime.CalculatorRuntime;
 import com.github.vmssilva.calculator.engine.value.Value;
@@ -41,21 +45,23 @@ public class CalculatorApp {
   private static void handleCommand(String cmd) {
     switch (cmd) {
       case "q", "quit", "exit" -> exit(0, "Bye!");
-      default -> throw new UnsupportedOperationException("Invalid option");
+      default -> throw new UnsupportedOperationException("Invalid option: '" + cmd + "'");
     }
   }
 
   private static Value evaluate(String expression, ApplicationContext context) {
     try {
       return runtime.evaluate(expression, context);
-    } catch (Exception e) {
-      throw new ValueErrorException(e.getMessage());
+    } catch (ValueErrorException | ExecutionErrorException | CalculatorLexerException | CalculatorParserException e) {
+      throw e;
+    } catch (Exception rt) {
+      throw new RuntimeException("Unknown error");
     }
   }
 
   private static void repl() {
 
-    state.mapper.register(List.of(Key.of("CTRL+C"), Key.of("CTRL+D")), (s) -> {
+    state.mapper.register(List.of("CTRL+C", "CTRL+D"), (s) -> {
       exit(1, "");
     });
 
@@ -66,13 +72,17 @@ public class CalculatorApp {
 
       while (true) {
 
-        input = readLine();
+        state.effects.write(renderer.getPrompt());
+
+        input = getLine();
+
+        state.effects.write(Ansi.clearLine() + renderer.getPrompt() + input + "\n");
 
         if (input.startsWith("\\")) {
           try {
             handleCommand(input.substring(1));
           } catch (Exception e) {
-            System.out.println(Ansi.clearLine() + e.getMessage());
+            state.effects.write(Ansi.clearLine() + e.getMessage() + "\n");
             continue;
           }
         }
@@ -80,9 +90,9 @@ public class CalculatorApp {
         try {
           var result = evaluate(input, context);
           state.history.add(input);
-          System.out.printf("\r%s\n", result);
-        } catch (ValueErrorException e) {
-          System.out.printf("\r%s\n", "Invalid expression");
+          state.effects.write("\r" + result.toString() + "\n");
+        } catch (Exception e) {
+          state.effects.write("\r" + e.getMessage() + "\n");
           continue;
         }
       }
@@ -92,7 +102,8 @@ public class CalculatorApp {
       try {
         terminal.restore();
       } catch (IOException | InterruptedException e) {
-        e.printStackTrace();
+        state.effects.write("\n" + "Error when trying to restore terminal configurations" + "\n");
+        System.exit(1);
       }
     }
   }
@@ -100,21 +111,25 @@ public class CalculatorApp {
   private static void preview(String pre) {
 
     if (pre.isEmpty()) {
-      System.out.printf("\033[1B\r\033[2K\033[1A");
+      state.effects.write(Ansi.cursorDown(1) + Ansi.clearLine() + Ansi.cursorUp(1));
       return;
     }
 
     try {
-      System.out.print("\033[1B\r\033[2K\033[90m" + evaluate(pre, context).toString() + "\033[0m" + "\033[1A");
-    } catch (ValueErrorException e) {
-      System.out.print("\033[1B\r\033[2K\033[1A");
+
+      state.effects
+          .write(Ansi.cursorDown(1) + Ansi.clearLine() + "\033[90m" + evaluate(pre, context).toString() + Ansi.RESET
+              + Ansi.cursorUp(1));
+
+    } catch (Exception e) {
+      state.effects.write(Ansi.cursorDown(1) + Ansi.clearLine() + Ansi.cursorUp(1));
     }
   }
 
-  private static String readLine() throws IOException {
+  private static String getLine() throws IOException {
 
-    System.out.print(renderer.getPrompt());
-    String out = "";
+    String output = "";
+    Command command = null;
 
     while (true) {
 
@@ -128,27 +143,25 @@ public class CalculatorApp {
           continue;
         }
 
-        out = state.buffer.toString().trim();
+        output = state.buffer.toString().trim();
         state.buffer.setLength(0);
         state.cursor = 0;
-        System.out.print("\r\033[2K" + renderer.getPrompt() + out);
 
         break;
       }
 
-      var cmd = state.mapper.map(key);
+      command = state.mapper.map(key);
 
-      if (cmd == null)
+      if (command == null)
         continue;
 
-      cmd.execute(state);
+      command.execute(state);
 
       preview(state.buffer.toString());
 
     }
 
-    System.out.println();
-    return out;
+    return output;
   }
 
   private static void exit(int exitStatus, String messsage) {
@@ -158,10 +171,11 @@ public class CalculatorApp {
       terminal.restore();
 
       if (!messsage.isEmpty())
-        System.out.println(messsage);
+        state.effects.write(messsage + "\n");
 
       System.exit(exitStatus);
     } catch (Exception e) {
+      state.effects.write("\n" + "Error when trying to restore terminal configurations" + "\n");
     }
   }
 

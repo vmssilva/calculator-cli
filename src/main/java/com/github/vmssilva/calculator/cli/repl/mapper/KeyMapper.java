@@ -24,12 +24,16 @@ public class KeyMapper {
     loadActions();
   }
 
-  public void register(List<Key> keys, Command command) {
+  public void register(List<String> keys, Command command) {
     keys.forEach((key) -> register(key, command));
   }
 
   public void register(Key key, Command command) {
     actions.put(key, command);
+  }
+
+  public void register(String key, Command command) {
+    register(Key.of(key), command);
   }
 
   public Command map(Key key) {
@@ -51,12 +55,7 @@ public class KeyMapper {
 
   private void loadActions() {
 
-    register(Key.of("ENTER"), s -> {
-      s.buffer.setLength(0);
-      s.cursor = 0;
-    });
-
-    register(List.of(Key.of("CTRL+C"), Key.of("CTRL+D")), (s) -> {
+    register(List.of("CTRL+C", "CTRL+D"), (s) -> {
       System.exit(1);
     });
 

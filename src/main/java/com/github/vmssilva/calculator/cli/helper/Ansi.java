@@ -11,4 +11,12 @@ public final class Ansi {
   public static String clearLine() {
     return "\r" + CLEAR_LINE;
   }
+
+  public static String cursorDown(int index) {
+    return "\033[" + index + "B";
+  }
+
+  public static String cursorUp(int index) {
+    return "\033[" + index + "A";
+  }
 }
