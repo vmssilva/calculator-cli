@@ -7,126 +7,74 @@ import java.util.Map;
 import com.github.vmssilva.calculator.cli.repl.Key;
 import com.github.vmssilva.calculator.cli.repl.KeyType;
 import com.github.vmssilva.calculator.cli.repl.command.BackspaceCommand;
+import com.github.vmssilva.calculator.cli.repl.command.ClearLeftCommand;
+import com.github.vmssilva.calculator.cli.repl.command.ClearRightCommand;
+import com.github.vmssilva.calculator.cli.repl.command.ClearScreenCommand;
 import com.github.vmssilva.calculator.cli.repl.command.Command;
 import com.github.vmssilva.calculator.cli.repl.command.DeleteCommand;
+import com.github.vmssilva.calculator.cli.repl.command.DownCommand;
 import com.github.vmssilva.calculator.cli.repl.command.EndCommand;
+import com.github.vmssilva.calculator.cli.repl.command.EnterCommand;
 import com.github.vmssilva.calculator.cli.repl.command.HomeCommand;
 import com.github.vmssilva.calculator.cli.repl.command.InsertCommand;
 import com.github.vmssilva.calculator.cli.repl.command.LeftCommand;
 import com.github.vmssilva.calculator.cli.repl.command.RightCommand;
+import com.github.vmssilva.calculator.cli.repl.command.TabCommand;
+import com.github.vmssilva.calculator.cli.repl.command.UpCommand;
 
 public class KeyMapper {
 
-  private final Map<Key, Command> actions;
-
-  public KeyMapper() {
-    this.actions = new HashMap<>();
-    loadActions();
-  }
-
-  public void register(List<String> keys, Command command) {
-    keys.forEach((key) -> register(key, command));
-  }
+  private final Map<Key, Command> actions = new HashMap<>();
 
   public void register(Key key, Command command) {
     actions.put(key, command);
   }
 
-  public void register(String key, Command command) {
-    register(Key.of(key), command);
+  public void register(List<String> keys, Command command) {
+    keys.forEach(k -> register(Key.of(k), command));
   }
 
   public Command map(Key key) {
-    if (actions.containsKey(key))
-      return actions.get(key);
+
+    Command custom = actions.get(key);
+    if (custom != null)
+      return custom;
 
     return switch (key.type()) {
       case REGULAR -> new InsertCommand(key);
       case SPACE -> new InsertCommand(new Key(" ", KeyType.REGULAR));
       case BACKSPACE -> new BackspaceCommand();
       case DELETE -> new DeleteCommand();
+      case UP -> new UpCommand();
+      case DOWN -> new DownCommand();
       case LEFT -> new LeftCommand();
       case RIGHT -> new RightCommand();
       case HOME -> new HomeCommand();
       case END -> new EndCommand();
+      case TAB -> new TabCommand();
+      case ENTER -> new EnterCommand();
+      case CTRL -> handleCtrl(key);
       default -> null;
     };
   }
 
-  private void loadActions() {
+  private Command handleCtrl(Key key) {
 
-    register(List.of("CTRL+C", "CTRL+D"), (s) -> {
-      System.exit(1);
-    });
+    String value = key.value().substring(5).trim();
 
-    register(Key.of("CTRL+U"), (s) -> {
-      s.buffer.delete(0, s.cursor);
-      s.cursor = 0;
-    });
+    if (!(value.isEmpty())) {
 
-    register(Key.of("CTRL+K"), (s) -> {
-      s.buffer.delete(s.cursor, s.buffer.length());
-    });
+      if (value.equals("L"))
+        return new ClearScreenCommand();
 
-    register(Key.of("CTRL+L"), (s) -> s.effects.clearScreen());
+      if (value.equals("U"))
+        return new ClearLeftCommand();
 
-    register(Key.of("UP"), (s) -> {
+      if (value.equals("K"))
+        return new ClearRightCommand();
 
-      if (s.history.size() <= 0)
-        return;
+    }
 
-      if (s.historyIndex == -1) {
-        s.savedBuffer = s.buffer.toString();
-        s.historyIndex = s.history.size() - 1;
-      } else {
-        if (s.historyIndex > 0) {
-          s.historyIndex--;
-        }
-      }
-
-      s.buffer.setLength(0);
-      s.buffer.append(s.history.get(s.historyIndex));
-      s.cursor = s.buffer.length();
-    });
-
-    register(Key.of("DOWN"), (s) -> {
-      if (s.historyIndex == -1)
-        return;
-
-      if (s.historyIndex < s.history.size() - 1) {
-        s.historyIndex++;
-        s.buffer.setLength(0);
-        s.buffer.append(s.history.get(s.historyIndex));
-        s.cursor = s.buffer.length();
-      } else {
-        s.historyIndex = -1;
-
-        s.buffer.setLength(0);
-        s.buffer.append(s.savedBuffer);
-        s.cursor = s.buffer.length();
-      }
-
-    });
-
-    register(Key.of("TAB"), (s) -> {
-      var value = s.buffer.toString();
-
-      if (!(value.startsWith("!")))
-        return;
-
-      try {
-        int index = Integer.valueOf(value.substring(1));
-
-        if (index < 0 || index >= s.history.size())
-          return;
-
-        s.buffer.setLength(0);
-        s.buffer.append(s.history.get(index));
-        s.cursor = s.buffer.length();
-
-      } catch (NumberFormatException e) {
-        return;
-      }
-    });
+    return null;
   }
 }

@@ -12,17 +12,13 @@ import com.github.vmssilva.calculator.cli.repl.state.State;
 import com.github.vmssilva.calculator.cli.repl.terminal.TerminalControl;
 import com.github.vmssilva.calculator.cli.repl.terminal.UnixTerminal;
 import com.github.vmssilva.calculator.engine.context.ApplicationContext;
-import com.github.vmssilva.calculator.engine.exception.CalculatorLexerException;
-import com.github.vmssilva.calculator.engine.exception.CalculatorParserException;
-import com.github.vmssilva.calculator.engine.exception.ExecutionErrorException;
-import com.github.vmssilva.calculator.engine.exception.ValueErrorException;
 import com.github.vmssilva.calculator.engine.runtime.CalculatorRuntime;
-import com.github.vmssilva.calculator.engine.value.Value;
 
 public class CalculatorApp {
 
   private static final ApplicationContext context = new ApplicationContext();
   private static final CalculatorRuntime runtime = new CalculatorRuntime();
+
   private static final State state = new State();
   private static final TerminalControl terminal = new TerminalControl(new UnixTerminal());
   private static final Renderer renderer = new Renderer(state, "calc> ");
@@ -30,106 +26,89 @@ public class CalculatorApp {
   public static void main(String[] args) {
 
     if (args.length > 0) {
-      try {
-        var res = evaluate(args[0], context);
-        System.out.println(res);
-      } catch (Exception e) {
-        System.out.println(e.getMessage());
-        System.exit(1);
-      }
-    } else {
-      repl();
+      runCli(args[0]);
+      return;
     }
+
+    repl();
   }
 
-  private static void handleCommand(String cmd) {
-    switch (cmd) {
-      case "q", "quit", "exit" -> exit(0, "Bye!");
-      default -> throw new UnsupportedOperationException("Invalid option: '" + cmd + "'");
-    }
-  }
-
-  private static Value evaluate(String expression, ApplicationContext context) {
+  private static void runCli(String expr) {
     try {
-      return runtime.evaluate(expression, context);
-    } catch (ValueErrorException | ExecutionErrorException | CalculatorLexerException | CalculatorParserException e) {
-      throw e;
-    } catch (Exception rt) {
-      throw new RuntimeException("Unknown error");
+      System.out.println(runtime.evaluate(expr, context));
+    } catch (Exception e) {
+      System.out.println(e.getMessage());
+      System.exit(1);
     }
   }
 
   private static void repl() {
 
-    state.mapper.register(List.of("CTRL+C", "CTRL+D"), (s) -> {
-      exit(1, "");
-    });
+    state.mapper.register(List.of("CTRL+C", "CTRL+D"), (s) -> exit(1, ""));
 
     try {
       terminal.init();
       state.effects.hideCursor();
-      String input = "";
 
       while (true) {
 
-        state.effects.write(renderer.getPrompt());
+        renderFrame();
 
-        input = getLine();
-
+        String input = getLine();
         state.effects.write(Ansi.clearLine() + renderer.getPrompt() + input + "\n");
 
-        if (input.startsWith("\\")) {
-          try {
-            handleCommand(input.substring(1));
-          } catch (Exception e) {
-            state.effects.write(Ansi.clearLine() + e.getMessage() + "\n");
-            continue;
-          }
-        }
-
-        try {
-          var result = evaluate(input, context);
-          state.history.add(input);
-          state.effects.write("\r" + result.toString() + "\n");
-        } catch (Exception e) {
-          state.effects.write("\r" + e.getMessage() + "\n");
+        if (handleCommand(input)) {
           continue;
         }
+
+        evaluate(input);
+
       }
+
     } catch (Exception e) {
+      e.printStackTrace();
     } finally {
-      state.effects.showCursor();
-      try {
-        terminal.restore();
-      } catch (IOException | InterruptedException e) {
-        state.effects.write("\n" + "Error when trying to restore terminal configurations" + "\n");
-        System.exit(1);
-      }
+      shutdown();
     }
   }
 
-  private static void preview(String pre) {
+  private static void renderFrame() {
+    state.effects.write(renderer.getPrompt());
+  }
 
-    if (pre.isEmpty()) {
-      state.effects.write(Ansi.cursorDown(1) + Ansi.clearLine() + Ansi.cursorUp(1));
-      return;
+  private static boolean handleCommand(String input) {
+    if (!input.startsWith("\\"))
+      return false;
+
+    switch (input.substring(1)) {
+      case "q", "quit", "exit" -> exit(0, "Bye!");
+      case "clear" -> state.effects.clearScreen();
+      default -> state.effects.write("Unknown command\n");
     }
 
+    return true;
+  }
+
+  private static void evaluate(String input) {
     try {
-
-      state.effects
-          .write(Ansi.cursorDown(1) + Ansi.clearLine() + "\033[90m" + evaluate(pre, context).toString() + Ansi.RESET
-              + Ansi.cursorUp(1));
-
+      var result = runtime.evaluate(input, context);
+      state.history.add(input);
+      state.effects.write("\r" + Ansi.clearLine() + result + "\n");
     } catch (Exception e) {
-      state.effects.write(Ansi.cursorDown(1) + Ansi.clearLine() + Ansi.cursorUp(1));
+      state.effects.write("\r" + e.getMessage() + "\n");
+    }
+  }
+
+  private static void shutdown() {
+    state.effects.showCursor();
+    try {
+      terminal.restore();
+    } catch (Exception e) {
+      state.effects.write("Error restoring terminal\n");
     }
   }
 
   private static String getLine() throws IOException {
-
-    String output = "";
-    Command command = null;
 
     while (true) {
 
@@ -137,45 +116,76 @@ public class CalculatorApp {
 
       Key key = terminal.read();
 
+      // 1. primeiro verifica ENTER (ANTES de qualquer mutação)
       if (key.type() == KeyType.ENTER) {
+        String result = state.buffer.toString().trim();
 
-        if (state.buffer.isEmpty()) {
+        if (result.isEmpty())
           continue;
-        }
 
-        output = state.buffer.toString().trim();
-        state.buffer.setLength(0);
-        state.cursor = 0;
+        state.resetInput();
 
-        break;
+        return result;
       }
 
-      command = state.mapper.map(key);
-
+      // 2. depois processa comandos normais
+      Command command = state.mapper.map(key);
       if (command == null)
         continue;
 
       command.execute(state);
 
+      // 3. preview só depois da mutação
       preview(state.buffer.toString());
-
     }
-
-    return output;
   }
 
-  private static void exit(int exitStatus, String messsage) {
+  private static void exit(int code, String msg) {
+    shutdown();
+    if (!msg.isEmpty())
+      System.out.println("\r" + msg);
+    System.exit(code);
+  }
+
+  private static String evaluateSafe(String expression) {
     try {
-      state.effects.clearLine();
-      state.effects.showCursor();
-      terminal.restore();
-
-      if (!messsage.isEmpty())
-        state.effects.write(messsage + "\n");
-
-      System.exit(exitStatus);
+      return runtime.evaluate(expression, context).toString();
     } catch (Exception e) {
-      state.effects.write("\n" + "Error when trying to restore terminal configurations" + "\n");
+      return "";
+    }
+  }
+
+  private static void preview(String pre) {
+
+    try {
+
+      if (pre.isEmpty()) {
+        state.effects.write(
+            Ansi.saveCursor()
+                + Ansi.cursorDown(1)
+                + Ansi.clearLine()
+                + Ansi.restoreCursor());
+        return;
+      }
+
+      state.effects.write(
+          Ansi.saveCursor()
+              + Ansi.cursorDown(1)
+              + "\r"
+              + Ansi.clearLine()
+              + Ansi.Color.GRAY
+              + "→ "
+              + evaluateSafe(pre)
+              + Ansi.RESET
+              + Ansi.restoreCursor());
+
+    } catch (Exception e) {
+
+      state.effects.write(
+          Ansi.saveCursor()
+              + "\n"
+              + Ansi.clearLine()
+              + Ansi.restoreCursor());
     }
   }
 

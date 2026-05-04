@@ -13,7 +13,7 @@ public class InsertCommand implements Command {
 
   @Override
   public void execute(State state) {
-    state.buffer.insert(state.cursor, key.value());
-    state.cursor++;
+    state.buffer.insert(state.cursorX, key.value());
+    state.cursorX++;
   }
 }

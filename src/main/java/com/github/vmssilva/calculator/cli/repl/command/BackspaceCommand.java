@@ -6,10 +6,10 @@ public class BackspaceCommand implements Command {
 
   @Override
   public void execute(State state) {
-    if (state.cursor == 0)
+    if (state.cursorX == 0)
       return;
 
-    state.buffer.deleteCharAt(state.cursor - 1);
-    state.cursor--;
+    state.buffer.deleteCharAt(state.cursorX - 1);
+    state.cursorX--;
   }
 }

@@ -7,7 +7,7 @@ public class LeftCommand implements Command {
 
   @Override
   public void execute(State state) {
-    if (state.cursor > 0)
-      state.cursor--;
+    if (state.cursorX > 0)
+      state.cursorX--;
   }
 }

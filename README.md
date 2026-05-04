@@ -1,308 +1,173 @@
-# Calculator CLI
+# Calculator REPL
 
-A simple **command-line calculator written in Java**.
+A simple interactive REPL (Read-Eval-Print Loop) in Java for experimenting with the  
+[Calculator Engine](https://github.com/vmssilva/calculator-engine).
 
-It evaluates mathematical expressions by delegating parsing and AST evaluation to the companion project:
-
-➡ Core parser and AST engine:
-[`calculator-engine`](https://github.com/vmssilva/calculator-engine)
-
-This CLI acts as a **thin interactive interface** for the parser.
+A terminal-based interface with real-time evaluation and ANSI-powered live preview.
 
 ---
 
-# Architecture
+## ✨ Features
 
-![Architecture](docs/images/architecture.svg)
-
-The CLI only handles:
-
-* terminal interaction
-* commands
-* input handling
-
-The actual parsing and evaluation are handled by the **calculator-engine**.
+- Interactive REPL interface
+- Real-time expression evaluation
+- Live preview while typing
+- Command history and line editing
+- Built-in commands (`exit`, `clear`, etc.)
+- Pure ANSI terminal rendering (no external UI libs)
 
 ---
 
-# Features
+## 📦 Installation
 
-* Interactive CLI mode
-* Direct expression execution from arguments
-* Colored terminal interface
-* Expression parsing using an **AST**
-* Automatic multiplication (`5(5+5)`)
-* Signed numbers support
-* Error detection for malformed expressions
+The CLI depends on the Calculator Engine.
 
----
-
-# Supported Operations
-
-| Operator | Description    |
-| -------- | -------------- |
-| `+`      | Addition       |
-| `-`      | Subtraction    |
-| `*`      | Multiplication |
-| `/`      | Division       |
-| `%`      | Modulo         |
-| `( )`    | Parentheses    |
-
----
-
-# Operator Precedence
-
-![Operator Precedence](docs/images/operator-precedence.svg)
-
----
-
-# Dependency
-
-This project depends on:
-[`calculator-engine`](https://github.com/vmssilva/calculator-engine)
-
-The dependency is responsible for:
-
-* parsing expressions
-* building the AST
-* evaluating the result
-
----
-
-# Running the Calculator
-
-## Execute a single expression
-
-![Terminal Example](docs/images/terminal-basic.svg)
-
-Example:
+### 1. Install Calculator Engine
 
 ```bash
-java -jar calculator-cli.jar "2+2"
-```
-
-Output
-
-```
-4.0
-```
-
----
-
-# Interactive Mode
-
-If no arguments are provided, the calculator starts in **interactive mode**.
-
-![Interactive Example](docs/images/terminal-interactive.svg)
-
-Start the CLI:
-
-```bash
-java -jar calculator-cli.jar
-```
-
-Example session:
-
-```
-calc> 2+2
-4.0
-
-calc> (1+2)*5
-15.0
-
-calc> q
-Goodbye! You performed 2 operations.
-```
-
----
-
-# Terminal Commands
-
-| Command | Description          |
-| ------- | -------------------- |
-| `clear` | Clears the terminal  |
-| `q`     | Exit the application |
-
-Example:
-
-```
-calc> clear
-```
-
----
-
-# Expression Examples
-
-## Numbers
-
-```
-calc> 1
-1.0
-
-calc> 1.5
-1.5
-```
-
----
-
-## Signed Numbers
-
-Explicit signs are supported.
-
-```
-calc> +1
-1.0
-
-calc> -1
--1.0
-```
-
-Also valid inside parentheses:
-
-```
-calc> (+1)
-1.0
-
-calc> (-1)
--1.0
-```
-
----
-
-# Implicit Multiplication
-
-Expressions like:
-
-```
-5(5+5)
-```
-
-are automatically interpreted as:
-
-```
-5*(5+5)
-```
-
-Example:
-
-```
-calc> 5(5+5)
-50.0
-```
-
----
-
-# Modulo Operator
-
-```
-calc> 10%3
-1.0
-```
-
-Combined with parentheses:
-
-```
-calc> 5(10%3)
-5.0
-```
-
----
-
-# Invalid Expressions
-
-Numbers must include a **leading zero before decimals**.
-
-Example:
-
-![Error Example](docs/images/terminal-error.svg)
-
-Invalid:
-
-```
-calc> .5
-Malformed expression
-```
-
-Correct:
-
-```
-calc> 0.5
-0.5
-```
-
----
-
-# AST Example
-
-Expression:
-
-```
-2 + 3 * 4
-```
-
-AST representation:
-
-![AST Example](docs/images/ast-example.svg)
-
-Evaluation order:
-
-```
-3 * 4 = 12
-2 + 12 = 14
-```
-
-Result:
-
-```
-14
-```
-
----
-
-# 🚀 Quick Start
-
-Build and run the **calculator-cli** from source.
-
-The CLI depends on:
-
-➡ calculator-engine
-
-Run the following commands:
-
-```bash
-# Clone the projects
-git clone https://github.com/vmssilva/calculator-engine.git
-git clone https://github.com/vmssilva/calculator-cli.git
-
-# Build and install the API
+git clone https://github.com/vmssilva/calculator-engine
 cd calculator-engine
 mvn clean install
-
-# Build the CLI with dependencies
-cd ../calculator-cli
-mvn clean package
-
-# Run the CLI
-java -jar target/calculator-cli-1.0-SNAPSHOT.jar
-```
+````
 
 ---
 
-## Optional Verification
-
-You can verify that the API classes were bundled into the JAR:
+### 2. Build CLI
 
 ```bash
-jar tf target/calculator-cli-1.0-SNAPSHOT.jar | grep calculator/engine
-```
-
-Expected output includes classes like:
-
-```
-com/github/vmssilva/calculator/engine/parser/RecursiveAstParser.class
+git clone https://github.com/vmssilva/calculator-cli
+cd calculator-cli
+mvn clean package
 ```
 
 ---
 
-# License
-This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.
+### 3. Run
+
+```bash
+java -jar target/calc.jar
+```
+
+---
+
+## 🧠 Usage
+
+```txt
+calc> 2 + 2
+4
+```
+
+Multiple expressions:
+
+```txt
+calc> 2 + 2; 3 + 3
+6
+```
+
+---
+
+## ⚡ Live Preview
+
+Expressions are evaluated in real time while typing:
+
+```txt
+calc> 10 * (2 + 3)
+50
+```
+
+---
+
+## ⌨️ Navigation
+
+| Key        | Action           |
+| ---------- | ---------------- |
+| ↑ / ↓      | History          |
+| ← / →      | Move cursor      |
+| Backspace  | Delete character |
+| Home / End | Line navigation  |
+| Enter      | Execute          |
+
+---
+
+## 🧩 Commands
+
+Commands start with `\`:
+
+```txt
+\exit   → exit REPL
+\q      → quit
+\clear  → clear screen
+```
+
+---
+
+## 🧪 Examples
+
+### Expressions
+
+```txt
+calc> (10 + 2) * 3
+36
+
+calc> sqrt(144)
+12
+```
+
+---
+
+### Variables
+
+```txt
+calc> a = 10
+0
+
+calc> a + 5
+15
+```
+
+---
+
+### Functions & Lambdas
+
+```txt
+calc> add(10, 20)
+30
+
+calc> ((x) -> (y) -> x * y)(10)(2)
+20
+```
+
+---
+
+## 🧠 Behavior
+
+* Last expression is always returned
+* `;` separates multiple expressions
+* Assignments return `0`
+* Functions and lambdas are first-class values
+* Built-in functions expose signature when referenced
+
+---
+
+## 📦 Architecture
+
+* **KeyMapper** → maps keyboard input to commands
+* **Commands** → mutate REPL state
+* **State** → buffer, cursor, history
+* **Renderer** → terminal output layer
+* **Engine** → expression evaluation core
+
+---
+
+## 📌 Notes
+
+* Uses raw ANSI escape sequences
+* No external UI libraries
+* Behavior may vary depending on terminal emulator
+
+---
+
+## 🪪 License
+
+MIT
+

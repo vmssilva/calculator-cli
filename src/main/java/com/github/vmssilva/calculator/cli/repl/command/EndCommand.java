@@ -6,6 +6,6 @@ public class EndCommand implements Command {
 
   @Override
   public void execute(State state) {
-    state.cursor = state.buffer.length();
+    state.cursorX = state.buffer.length();
   }
 }

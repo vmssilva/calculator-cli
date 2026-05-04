@@ -6,6 +6,6 @@ public class HomeCommand implements Command {
 
   @Override
   public void execute(State state) {
-    state.cursor = 0;
+    state.cursorX = 0;
   }
 }

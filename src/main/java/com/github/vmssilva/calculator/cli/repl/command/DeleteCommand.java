@@ -7,10 +7,10 @@ public class DeleteCommand implements Command {
   @Override
   public void execute(State state) {
 
-    if (state.cursor == state.buffer.length())
+    if (state.cursorX == state.buffer.length())
       return;
 
-    state.buffer.deleteCharAt(state.cursor);
+    state.buffer.deleteCharAt(state.cursorX);
 
   }
 }

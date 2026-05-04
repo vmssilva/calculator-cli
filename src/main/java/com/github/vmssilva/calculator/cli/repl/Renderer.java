@@ -23,14 +23,14 @@ public class Renderer {
     }
 
     for (int i = 0; i < state.buffer.length(); i++) {
-      if (i == state.cursor) {
+      if (i == state.cursorX) {
         out.append(Ansi.INVERT + state.buffer.charAt(i) + Ansi.RESET);
       } else {
         out.append(state.buffer.charAt(i));
       }
     }
 
-    if (state.cursor >= out.length()) {
+    if (state.cursorX >= out.length()) {
       out.append(Ansi.INVERT + " " + Ansi.RESET);
     }
 

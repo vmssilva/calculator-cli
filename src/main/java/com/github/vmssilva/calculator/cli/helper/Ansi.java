@@ -8,6 +8,8 @@ public final class Ansi {
   public static final String RESET = "\033[0m";
   public static final String INVERT = "\033[7m";
 
+  public static final Color Color = new Color();
+
   public static String clearLine() {
     return "\r" + CLEAR_LINE;
   }
@@ -18,5 +20,25 @@ public final class Ansi {
 
   public static String cursorUp(int index) {
     return "\033[" + index + "A";
+  }
+
+  public static String cursorLeft(int index) {
+    return "\033[" + index + "D";
+  }
+
+  public static String cursorRight(int index) {
+    return "\033[" + index + "C";
+  }
+
+  public static String saveCursor() {
+    return "\0337";
+  }
+
+  public static String restoreCursor() {
+    return "\0338";
+  }
+
+  public static class Color {
+    public String GRAY = "\033[90m";
   }
 }
