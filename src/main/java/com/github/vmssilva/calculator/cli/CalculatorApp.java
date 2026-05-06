@@ -7,11 +7,10 @@ import com.github.vmssilva.calculator.cli.repl.Key;
 import com.github.vmssilva.calculator.cli.repl.Renderer;
 import com.github.vmssilva.calculator.cli.repl.command.Command;
 import com.github.vmssilva.calculator.cli.repl.command.CommandContext;
+import com.github.vmssilva.calculator.cli.repl.command.ThemeCommand;
 import com.github.vmssilva.calculator.cli.repl.KeyType;
 import com.github.vmssilva.calculator.cli.repl.state.State;
 import com.github.vmssilva.calculator.cli.repl.style.Color;
-import com.github.vmssilva.calculator.cli.repl.style.DefaultTheme;
-import com.github.vmssilva.calculator.cli.repl.style.Theme;
 import com.github.vmssilva.calculator.cli.repl.terminal.Terminal;
 import com.github.vmssilva.calculator.cli.repl.terminal.TerminalInfo;
 import com.github.vmssilva.calculator.cli.repl.terminal.TerminalSession;
@@ -27,8 +26,7 @@ public class CalculatorApp {
   private static final Terminal terminal = new UnixTerminal();
   private static final TerminalSession session = new TerminalSession(terminal);
   private static final State state = new State();
-  private static final Theme theme = new DefaultTheme();
-  private static final Renderer renderer = new Renderer(state, session.out(), theme);
+  private static final Renderer renderer = new Renderer(state, session.out());
 
   public static void main(String[] args) {
 
@@ -76,16 +74,16 @@ public class CalculatorApp {
           var result = evaluate(input);
           session.out().clearLine();
 
-          session.out().setColor(theme.successColor());
-          session.out().write(theme.successSymbol() + " ");
+          session.out().setColor(state.theme.successColor());
+          session.out().write(state.theme.successSymbol() + " ");
 
           session.out().write(result + "\n");
           session.out().setColor(Color.RESET);
 
         } catch (Exception e) {
           session.out().clearLine();
-          session.out().setColor(theme.errorColor());
-          session.out().write(theme.errorSymbol() + " ");
+          session.out().setColor(state.theme.errorColor());
+          session.out().write(state.theme.errorSymbol() + " ");
           session.out().write(e.getMessage() + "\n");
           session.out().setColor(Color.RESET);
         }
@@ -110,10 +108,25 @@ public class CalculatorApp {
     switch (input.substring(1)) {
       case "q", "quit", "exit" -> exit(0, "Bye!");
       case "clear" -> session.out().clearScreen();
-      default -> session.out().write("Unknown command\n").flush();
+      default -> handleExtendedCommand(input.substring(1));
     }
 
     return true;
+  }
+
+  private static void handleExtendedCommand(String cmd) {
+
+    System.out.println("CMD " + cmd);
+
+    if (cmd.startsWith("theme ")) {
+      String arg = cmd.substring("theme ".length()).trim();
+      new ThemeCommand(arg).execute(new CommandContext(state, session.out()));
+      return;
+    }
+
+    session.out()
+        .write("Unknown command\n")
+        .flush();
   }
 
   private static String evaluate(String input) {

@@ -2,12 +2,15 @@ package com.github.vmssilva.calculator.cli.repl.state;
 
 import com.github.vmssilva.calculator.cli.repl.History;
 import com.github.vmssilva.calculator.cli.repl.mapper.KeyMapper;
+import com.github.vmssilva.calculator.cli.repl.style.DefaultTheme;
+import com.github.vmssilva.calculator.cli.repl.style.Theme;
 
 public class State {
 
   public final KeyMapper mapper;
   public final History history;
   public final StringBuilder buffer = new StringBuilder();
+  public Theme theme = new DefaultTheme();
 
   public int cursorX = 0;
   public int historyIndex = -1;
@@ -23,6 +26,10 @@ public class State {
     cursorX = 0;
     historyIndex = -1;
     savedBuffer = "";
+  }
+
+  public void setTheme(Theme theme) {
+    this.theme = theme;
   }
 
 }

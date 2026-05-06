@@ -4,18 +4,15 @@ import java.util.function.Function;
 
 import com.github.vmssilva.calculator.cli.repl.state.State;
 import com.github.vmssilva.calculator.cli.repl.style.Color;
-import com.github.vmssilva.calculator.cli.repl.style.Theme;
 import com.github.vmssilva.calculator.cli.repl.terminal.TerminalOutput;
 
 public class Renderer {
 
   private final State state;
-  private final Theme theme;
   private final TerminalOutput out;
 
-  public Renderer(State state, TerminalOutput out, Theme theme) {
+  public Renderer(State state, TerminalOutput out) {
     this.state = state;
-    this.theme = theme;
     this.out = out;
   }
 
@@ -24,10 +21,12 @@ public class Renderer {
     out.clearLine();
     out.write("\r").clearLine();
 
+    var cursor = state.theme.cursor();
+
     if (state.buffer.isEmpty()) {
-      out.write(theme.prompt());
-      out.setColor(theme.cursorColor());
-      out.write(theme.cursor());
+      out.write(state.theme.prompt());
+      out.setColor(state.theme.cursorColor());
+      out.write(cursor.isEmpty() ? " " : cursor);
       out.setColor(Color.RESET);
       return;
     }
@@ -38,21 +37,28 @@ public class Renderer {
       char c = state.buffer.charAt(i);
 
       if (i == state.cursorX) {
-        rendered.append(theme.cursorColor())
-            .append(c)
-            .append(Color.RESET);
+        rendered.append(state.theme.cursorColor());
+
+        if (cursor.isEmpty()) {
+          rendered.append(c);
+          rendered.append(Color.RESET);
+        } else {
+          rendered.append(cursor);
+          rendered.append(Color.RESET);
+          rendered.append(c);
+        }
       } else {
         rendered.append(c);
       }
     }
 
     if (state.cursorX >= state.buffer.length()) {
-      rendered.append(theme.cursorColor())
-          .append(theme.cursor())
-          .append(Color.RESET);
+      rendered.append(state.theme.cursorColor());
+      rendered.append((cursor.isEmpty()) ? " " : cursor);
+      rendered.append(Color.RESET);
     }
 
-    out.write(theme.prompt());
+    out.write(state.theme.prompt());
     out.write(rendered.toString());
 
   }
@@ -75,8 +81,8 @@ public class Renderer {
         .moveCursor(row, col)
         .write("\r")
         .clearLine()
-        .setColor(theme.previewColor())
-        .write(theme.previewArrow())
+        .setColor(state.theme.previewColor())
+        .write(state.theme.previewArrow())
         .write(" ")
         .write(evaluated)
         .setColor(Color.RESET)
@@ -86,6 +92,6 @@ public class Renderer {
   }
 
   public String getPrompt() {
-    return theme.prompt();
+    return state.theme.prompt();
   }
 }

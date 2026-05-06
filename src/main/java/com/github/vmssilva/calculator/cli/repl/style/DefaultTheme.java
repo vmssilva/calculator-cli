@@ -14,7 +14,7 @@ public class DefaultTheme implements Theme {
 
   @Override
   public String cursor() {
-    return " ";
+    return "";
   }
 
   // ===== colors =====

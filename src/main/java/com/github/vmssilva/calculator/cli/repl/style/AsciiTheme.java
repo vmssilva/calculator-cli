@@ -30,7 +30,7 @@ public class AsciiTheme implements Theme {
 
   @Override
   public Color cursorColor() {
-    return Color.INVERT;
+    return Color.RESET;
   }
 
   @Override
