@@ -6,11 +6,14 @@ import java.util.List;
 import com.github.vmssilva.calculator.cli.repl.Key;
 import com.github.vmssilva.calculator.cli.repl.Renderer;
 import com.github.vmssilva.calculator.cli.repl.command.Command;
+import com.github.vmssilva.calculator.cli.repl.command.CommandContext;
 import com.github.vmssilva.calculator.cli.repl.KeyType;
 import com.github.vmssilva.calculator.cli.repl.state.State;
+import com.github.vmssilva.calculator.cli.repl.style.Color;
+import com.github.vmssilva.calculator.cli.repl.style.DefaultTheme;
+import com.github.vmssilva.calculator.cli.repl.style.Theme;
 import com.github.vmssilva.calculator.cli.repl.terminal.Terminal;
 import com.github.vmssilva.calculator.cli.repl.terminal.TerminalInfo;
-import com.github.vmssilva.calculator.cli.repl.terminal.TerminalOutput;
 import com.github.vmssilva.calculator.cli.repl.terminal.TerminalSession;
 import com.github.vmssilva.calculator.cli.repl.terminal.UnixTerminal;
 import com.github.vmssilva.calculator.engine.context.ApplicationContext;
@@ -23,8 +26,9 @@ public class CalculatorApp {
 
   private static final Terminal terminal = new UnixTerminal();
   private static final TerminalSession session = new TerminalSession(terminal);
-  private static final State state = new State(session);
-  private static final Renderer renderer = new Renderer(state, "calc → ", (TerminalOutput) terminal);
+  private static final State state = new State();
+  private static final Theme theme = new DefaultTheme();
+  private static final Renderer renderer = new Renderer(state, session.out(), theme);
 
   public static void main(String[] args) {
 
@@ -68,7 +72,23 @@ public class CalculatorApp {
           continue;
         }
 
-        evaluate(input);
+        try {
+          var result = evaluate(input);
+          session.out().clearLine();
+
+          session.out().setColor(theme.successColor());
+          session.out().write(theme.successSymbol() + " ");
+
+          session.out().write(result + "\n");
+          session.out().setColor(Color.RESET);
+
+        } catch (Exception e) {
+          session.out().clearLine();
+          session.out().setColor(theme.errorColor());
+          session.out().write(theme.errorSymbol() + " ");
+          session.out().write(e.getMessage() + "\n");
+          session.out().setColor(Color.RESET);
+        }
 
       }
 
@@ -96,13 +116,17 @@ public class CalculatorApp {
     return true;
   }
 
-  private static void evaluate(String input) {
+  private static String evaluate(String input) {
     try {
       var result = runtime.evaluate(input, context);
       state.history.add(input);
-      session.out().clearLine().write(result + "\n");
+
+      return result.toString();
+
+      // session.out().clearLine().write(result + "\n");
     } catch (Exception e) {
-      session.out().clearLine().write(e.getMessage() + "\n");
+      throw e;
+      // session.out().clearLine().write(e.getMessage() + "\n");
     }
   }
 
@@ -138,9 +162,9 @@ public class CalculatorApp {
       if (command == null)
         continue;
 
-      command.execute(state);
+      command.execute(new CommandContext(state, session.out()));
 
-      int[] pos = TerminalInfo.cursorPosition(System.in);
+      int[] pos = TerminalInfo.cursorPosition(session.terminal().in());
 
       renderer.renderPreview(state.buffer.toString(), (value) -> evaluateSafe(value), pos[0] + 1, 0);
 

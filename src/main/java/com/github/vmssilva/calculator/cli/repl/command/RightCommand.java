@@ -1,12 +1,10 @@
 package com.github.vmssilva.calculator.cli.repl.command;
 
-import com.github.vmssilva.calculator.cli.repl.state.State;
-
 public class RightCommand implements Command {
 
   @Override
-  public void execute(State state) {
-    if (state.cursorX < state.buffer.length())
-      state.cursorX++;
+  public void execute(CommandContext context) {
+    if (context.state().cursorX < context.state().buffer.length())
+      context.state().cursorX++;
   }
 }

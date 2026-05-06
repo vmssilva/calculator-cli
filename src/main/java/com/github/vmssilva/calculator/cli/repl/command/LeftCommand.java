@@ -1,13 +1,11 @@
 
 package com.github.vmssilva.calculator.cli.repl.command;
 
-import com.github.vmssilva.calculator.cli.repl.state.State;
-
 public class LeftCommand implements Command {
 
   @Override
-  public void execute(State state) {
-    if (state.cursorX > 0)
-      state.cursorX--;
+  public void execute(CommandContext context) {
+    if (context.state().cursorX > 0)
+      context.state().cursorX--;
   }
 }

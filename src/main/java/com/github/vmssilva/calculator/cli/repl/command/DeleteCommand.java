@@ -1,16 +1,14 @@
 package com.github.vmssilva.calculator.cli.repl.command;
 
-import com.github.vmssilva.calculator.cli.repl.state.State;
-
 public class DeleteCommand implements Command {
 
   @Override
-  public void execute(State state) {
+  public void execute(CommandContext context) {
 
-    if (state.cursorX == state.buffer.length())
+    if (context.state().cursorX == context.state().buffer.length())
       return;
 
-    state.buffer.deleteCharAt(state.cursorX);
+    context.state().buffer.deleteCharAt(context.state().cursorX);
 
   }
 }

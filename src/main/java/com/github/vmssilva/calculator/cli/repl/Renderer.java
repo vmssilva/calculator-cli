@@ -4,17 +4,18 @@ import java.util.function.Function;
 
 import com.github.vmssilva.calculator.cli.repl.state.State;
 import com.github.vmssilva.calculator.cli.repl.style.Color;
+import com.github.vmssilva.calculator.cli.repl.style.Theme;
 import com.github.vmssilva.calculator.cli.repl.terminal.TerminalOutput;
 
 public class Renderer {
 
   private final State state;
-  private final String prompt;
+  private final Theme theme;
   private final TerminalOutput out;
 
-  public Renderer(State state, String prompt, TerminalOutput out) {
+  public Renderer(State state, TerminalOutput out, Theme theme) {
     this.state = state;
-    this.prompt = prompt;
+    this.theme = theme;
     this.out = out;
   }
 
@@ -24,9 +25,9 @@ public class Renderer {
     out.write("\r").clearLine();
 
     if (state.buffer.isEmpty()) {
-      out.write(prompt);
-      out.setColor(Color.INVERT);
-      out.write(" ");
+      out.write(theme.prompt());
+      out.setColor(theme.cursorColor());
+      out.write(theme.cursor());
       out.setColor(Color.RESET);
       return;
     }
@@ -37,7 +38,7 @@ public class Renderer {
       char c = state.buffer.charAt(i);
 
       if (i == state.cursorX) {
-        rendered.append(Color.INVERT)
+        rendered.append(theme.cursorColor())
             .append(c)
             .append(Color.RESET);
       } else {
@@ -46,12 +47,12 @@ public class Renderer {
     }
 
     if (state.cursorX >= state.buffer.length()) {
-      rendered.append(Color.INVERT)
-          .append(" ")
+      rendered.append(theme.cursorColor())
+          .append(theme.cursor())
           .append(Color.RESET);
     }
 
-    out.write(prompt);
+    out.write(theme.prompt());
     out.write(rendered.toString());
 
   }
@@ -74,8 +75,9 @@ public class Renderer {
         .moveCursor(row, col)
         .write("\r")
         .clearLine()
-        .setColor(Color.GRAY)
-        .write("→ ")
+        .setColor(theme.previewColor())
+        .write(theme.previewArrow())
+        .write(" ")
         .write(evaluated)
         .setColor(Color.RESET)
         .restoreCursor()
@@ -84,6 +86,6 @@ public class Renderer {
   }
 
   public String getPrompt() {
-    return prompt;
+    return theme.prompt();
   }
 }

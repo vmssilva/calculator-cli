@@ -2,25 +2,20 @@ package com.github.vmssilva.calculator.cli.repl.state;
 
 import com.github.vmssilva.calculator.cli.repl.History;
 import com.github.vmssilva.calculator.cli.repl.mapper.KeyMapper;
-import com.github.vmssilva.calculator.cli.repl.terminal.TerminalOutput;
-import com.github.vmssilva.calculator.cli.repl.terminal.TerminalSession;
 
 public class State {
 
   public final KeyMapper mapper;
   public final History history;
-
   public final StringBuilder buffer = new StringBuilder();
-  public int cursorX = 0;
 
+  public int cursorX = 0;
   public int historyIndex = -1;
   public String savedBuffer = "";
-  public TerminalOutput out;
 
-  public State(TerminalSession session) {
+  public State() {
     this.history = new History();
     this.mapper = new KeyMapper();
-    this.out = session.out();
   }
 
   public void resetInput() {
@@ -29,4 +24,5 @@ public class State {
     historyIndex = -1;
     savedBuffer = "";
   }
+
 }

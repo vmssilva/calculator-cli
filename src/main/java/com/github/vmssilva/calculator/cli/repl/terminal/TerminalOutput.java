@@ -1,5 +1,7 @@
 package com.github.vmssilva.calculator.cli.repl.terminal;
 
+import com.github.vmssilva.calculator.cli.repl.style.Color;
+
 public interface TerminalOutput {
 
   // =========================
@@ -30,8 +32,8 @@ public interface TerminalOutput {
 
   TerminalOutput flush();
 
-  default TerminalOutput setColor(String color) {
-    write(color);
+  default TerminalOutput setColor(Color color) {
+    write(color.ansi());
     return this;
   }
 
