@@ -3,13 +3,15 @@ package com.github.vmssilva.calculator.cli;
 import java.io.IOException;
 import java.util.List;
 
-import com.github.vmssilva.calculator.cli.helper.Ansi;
 import com.github.vmssilva.calculator.cli.repl.Key;
 import com.github.vmssilva.calculator.cli.repl.Renderer;
 import com.github.vmssilva.calculator.cli.repl.command.Command;
 import com.github.vmssilva.calculator.cli.repl.KeyType;
 import com.github.vmssilva.calculator.cli.repl.state.State;
-import com.github.vmssilva.calculator.cli.repl.terminal.TerminalControl;
+import com.github.vmssilva.calculator.cli.repl.terminal.Terminal;
+import com.github.vmssilva.calculator.cli.repl.terminal.TerminalInfo;
+import com.github.vmssilva.calculator.cli.repl.terminal.TerminalOutput;
+import com.github.vmssilva.calculator.cli.repl.terminal.TerminalSession;
 import com.github.vmssilva.calculator.cli.repl.terminal.UnixTerminal;
 import com.github.vmssilva.calculator.engine.context.ApplicationContext;
 import com.github.vmssilva.calculator.engine.runtime.CalculatorRuntime;
@@ -19,9 +21,10 @@ public class CalculatorApp {
   private static final ApplicationContext context = new ApplicationContext();
   private static final CalculatorRuntime runtime = new CalculatorRuntime();
 
-  private static final State state = new State();
-  private static final TerminalControl terminal = new TerminalControl(new UnixTerminal());
-  private static final Renderer renderer = new Renderer(state, "calc> ");
+  private static final Terminal terminal = new UnixTerminal();
+  private static final TerminalSession session = new TerminalSession(terminal);
+  private static final State state = new State(session);
+  private static final Renderer renderer = new Renderer(state, "calc → ", (TerminalOutput) terminal);
 
   public static void main(String[] args) {
 
@@ -47,15 +50,19 @@ public class CalculatorApp {
     state.mapper.register(List.of("CTRL+C", "CTRL+D"), (s) -> exit(1, ""));
 
     try {
-      terminal.init();
-      state.effects.hideCursor();
+
+      session.terminal().setup();
+      session.out().hideCursor();
 
       while (true) {
 
         renderFrame();
 
         String input = getLine();
-        state.effects.write(Ansi.clearLine() + renderer.getPrompt() + input + "\n");
+
+        session.out().clearLine();
+        renderFrame();
+        session.out().write(input + "\n");
 
         if (handleCommand(input)) {
           continue;
@@ -73,7 +80,7 @@ public class CalculatorApp {
   }
 
   private static void renderFrame() {
-    state.effects.write(renderer.getPrompt());
+    session.out().write(renderer.getPrompt());
   }
 
   private static boolean handleCommand(String input) {
@@ -82,8 +89,8 @@ public class CalculatorApp {
 
     switch (input.substring(1)) {
       case "q", "quit", "exit" -> exit(0, "Bye!");
-      case "clear" -> state.effects.clearScreen();
-      default -> state.effects.write("Unknown command\n");
+      case "clear" -> session.out().clearScreen();
+      default -> session.out().write("Unknown command\n").flush();
     }
 
     return true;
@@ -93,18 +100,18 @@ public class CalculatorApp {
     try {
       var result = runtime.evaluate(input, context);
       state.history.add(input);
-      state.effects.write("\r" + Ansi.clearLine() + result + "\n");
+      session.out().clearLine().write(result + "\n");
     } catch (Exception e) {
-      state.effects.write("\r" + e.getMessage() + "\n");
+      session.out().clearLine().write(e.getMessage() + "\n");
     }
   }
 
   private static void shutdown() {
-    state.effects.showCursor();
+    session.out().showCursor();
     try {
-      terminal.restore();
+      session.terminal().restore();
     } catch (Exception e) {
-      state.effects.write("Error restoring terminal\n");
+      session.out().write("Error restoring terminal\n");
     }
   }
 
@@ -114,9 +121,8 @@ public class CalculatorApp {
 
       renderer.render();
 
-      Key key = terminal.read();
+      Key key = session.in().read();
 
-      // 1. primeiro verifica ENTER (ANTES de qualquer mutação)
       if (key.type() == KeyType.ENTER) {
         String result = state.buffer.toString().trim();
 
@@ -128,15 +134,16 @@ public class CalculatorApp {
         return result;
       }
 
-      // 2. depois processa comandos normais
       Command command = state.mapper.map(key);
       if (command == null)
         continue;
 
       command.execute(state);
 
-      // 3. preview só depois da mutação
-      preview(state.buffer.toString());
+      int[] pos = TerminalInfo.cursorPosition(System.in);
+
+      renderer.renderPreview(state.buffer.toString(), (value) -> evaluateSafe(value), pos[0] + 1, 0);
+
     }
   }
 
@@ -144,6 +151,7 @@ public class CalculatorApp {
     shutdown();
     if (!msg.isEmpty())
       System.out.println("\r" + msg);
+
     System.exit(code);
   }
 
@@ -152,40 +160,6 @@ public class CalculatorApp {
       return runtime.evaluate(expression, context).toString();
     } catch (Exception e) {
       return "";
-    }
-  }
-
-  private static void preview(String pre) {
-
-    try {
-
-      if (pre.isEmpty()) {
-        state.effects.write(
-            Ansi.saveCursor()
-                + Ansi.cursorDown(1)
-                + Ansi.clearLine()
-                + Ansi.restoreCursor());
-        return;
-      }
-
-      state.effects.write(
-          Ansi.saveCursor()
-              + Ansi.cursorDown(1)
-              + "\r"
-              + Ansi.clearLine()
-              + Ansi.Color.GRAY
-              + "→ "
-              + evaluateSafe(pre)
-              + Ansi.RESET
-              + Ansi.restoreCursor());
-
-    } catch (Exception e) {
-
-      state.effects.write(
-          Ansi.saveCursor()
-              + "\n"
-              + Ansi.clearLine()
-              + Ansi.restoreCursor());
     }
   }
 

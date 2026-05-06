@@ -6,7 +6,7 @@ public class ClearScreenCommand implements Command {
 
   @Override
   public void execute(State state) {
-    state.effects.clearScreen();
+    state.out.clearScreen();
   }
 
 }

@@ -21,5 +21,6 @@ public enum KeyType {
   PAGE_DOWN,
   HOME,
   END,
+  ANSI,
   UNKNOWN;
 }

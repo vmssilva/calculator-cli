@@ -98,46 +98,43 @@ public class TerminalControl {
     // ESC [
     int code = in.read();
 
-    switch (code) {
-      case 'A':
-        return new Key("UP", KeyType.UP);
-      case 'B':
-        return new Key("DOWN", KeyType.DOWN);
-      case 'C':
-        return new Key("RIGHT", KeyType.RIGHT);
-      case 'D':
-        return new Key("LEFT", KeyType.LEFT);
-      case 'H':
-        return new Key("HOME", KeyType.HOME);
-      case 'F':
-        return new Key("END", KeyType.END);
+    if (Character.isLetter(code)) {
+      return mapLetter(code);
     }
 
     // ESC [ number ~
     if (Character.isDigit(code)) {
-      StringBuilder number = new StringBuilder();
-      number.append((char) code);
+      StringBuilder seq = new StringBuilder();
+      seq.append((char) code);
 
       while (true) {
         int c = in.read();
 
-        if (c == '~')
-          break;
-
-        if (c == ';') {
-          // ignora modificadores (Ctrl, Shift...)
-          while (true) {
-            int mod = in.read();
-            if (Character.isLetter(mod)) {
-              return mapLetter(mod);
-            }
-          }
+        if (c == -1) {
+          return new Key("ESC_SEQ", KeyType.UNKNOWN);
         }
 
-        number.append((char) c);
+        if (c == 'R') {
+          seq.append((char) c);
+          return new Key("\033[" + seq.toString(), KeyType.ANSI);
+        }
+
+        if (c == '~') {
+          seq.append((char) c);
+          break;
+        }
+
+        seq.append((char) c);
       }
 
-      int n = Integer.parseInt(number.toString());
+      String number = seq.substring(0, seq.length() - 1);
+
+      int n;
+      try {
+        n = Integer.parseInt(number);
+      } catch (NumberFormatException e) {
+        return new Key("ESC_SEQ", KeyType.UNKNOWN);
+      }
 
       return switch (n) {
         case 1, 7 -> new Key("HOME", KeyType.HOME);
@@ -160,7 +157,7 @@ public class TerminalControl {
         case 23 -> new Key("F11", KeyType.FUNCTION);
         case 24 -> new Key("F12", KeyType.FUNCTION);
 
-        default -> new Key("ESC[" + n + "~", KeyType.UNKNOWN);
+        default -> new Key("ESC[" + number + "~", KeyType.UNKNOWN);
       };
     }
 
@@ -173,6 +170,8 @@ public class TerminalControl {
       case 'B' -> new Key("DOWN", KeyType.DOWN);
       case 'C' -> new Key("RIGHT", KeyType.RIGHT);
       case 'D' -> new Key("LEFT", KeyType.LEFT);
+      case 'H' -> new Key("HOME", KeyType.HOME);
+      case 'F' -> new Key("END", KeyType.END);
       default -> new Key("MOD_" + (char) code, KeyType.UNKNOWN);
     };
   }
