@@ -15,6 +15,7 @@ public class State {
   public int cursorX = 0;
   public int historyIndex = -1;
   public String savedBuffer = "";
+  public boolean isError = false;
 
   public State() {
     this.history = new History();

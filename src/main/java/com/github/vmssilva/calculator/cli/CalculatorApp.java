@@ -2,6 +2,7 @@ package com.github.vmssilva.calculator.cli;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.github.vmssilva.calculator.cli.repl.Key;
 import com.github.vmssilva.calculator.cli.repl.Renderer;
@@ -17,6 +18,9 @@ import com.github.vmssilva.calculator.cli.repl.terminal.TerminalSession;
 import com.github.vmssilva.calculator.cli.repl.terminal.UnixTerminal;
 import com.github.vmssilva.calculator.engine.context.ApplicationContext;
 import com.github.vmssilva.calculator.engine.runtime.CalculatorRuntime;
+import com.github.vmssilva.calculator.engine.std.value.ListValue;
+import com.github.vmssilva.calculator.engine.std.value.StringValue;
+import com.github.vmssilva.calculator.engine.std.value.Value;
 
 public class CalculatorApp {
 
@@ -62,28 +66,32 @@ public class CalculatorApp {
 
         String input = getLine();
 
-        session.out().clearLine();
-        renderFrame();
-        session.out().write(input + "\n");
-
         if (handleCommand(input)) {
           continue;
         }
 
         try {
-          var result = evaluate(input);
+          String result = "";
+          Value<?> value = evaluate(input);
+          state.isError = false;
+
+          result = value.toString();
+
+          if (value instanceof ListValue l) {
+            result = l.unwrap().stream().map(m -> m.unwrap().toString()).collect(Collectors.joining("\r\n"));
+          }
+
+          // session.out().setColor(state.theme.successColor());
+          session.out().write("\n");
           session.out().clearLine();
-
-          session.out().setColor(state.theme.successColor());
-          session.out().write(state.theme.successSymbol() + " ");
-
           session.out().write(result + "\n");
-          session.out().setColor(Color.RESET);
+          // session.out().setColor(Color.RESET);
 
         } catch (Exception e) {
-          session.out().clearLine();
+          state.isError = true;
           session.out().setColor(state.theme.errorColor());
-          session.out().write(state.theme.errorSymbol() + " ");
+          session.out().write("\n");
+          session.out().clearLine();
           session.out().write(e.getMessage() + "\n");
           session.out().setColor(Color.RESET);
         }
@@ -129,17 +137,16 @@ public class CalculatorApp {
         .flush();
   }
 
-  private static String evaluate(String input) {
+  private static Value<?> evaluate(String input) {
     try {
-      var result = runtime.evaluate(input, context);
+
+      Value<?> result = runtime.evaluate(input, context);
       state.history.add(input);
 
-      return result.toString();
+      return result;
 
-      // session.out().clearLine().write(result + "\n");
     } catch (Exception e) {
       throw e;
-      // session.out().clearLine().write(e.getMessage() + "\n");
     }
   }
 
@@ -165,6 +172,8 @@ public class CalculatorApp {
 
         if (result.isEmpty())
           continue;
+
+        session.out().clearLine().write(renderer.getPrompt() + state.buffer.toString());
 
         state.resetInput();
 
@@ -192,11 +201,18 @@ public class CalculatorApp {
     System.exit(code);
   }
 
-  private static String evaluateSafe(String expression) {
+  private static Value<?> evaluateSafe(String expression) {
+
+    ApplicationContext previewContext = new ApplicationContext();
+    previewContext.currentScope().setParent(context.currentScope());
+    previewContext.pushScope();
+
     try {
-      return runtime.evaluate(expression, context).toString();
+      return runtime.evaluate(expression, previewContext);
     } catch (Exception e) {
-      return "";
+      return new StringValue("");
+    } finally {
+      previewContext.popScope();
     }
   }
 
