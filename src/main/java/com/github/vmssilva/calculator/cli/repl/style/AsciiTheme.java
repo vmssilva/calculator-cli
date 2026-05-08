@@ -45,12 +45,12 @@ public class AsciiTheme implements Theme {
 
   @Override
   public String successSymbol() {
-    return "OK";
+    return "";
   }
 
   @Override
   public String errorSymbol() {
-    return "ERR";
+    return "";
   }
 
   @Override

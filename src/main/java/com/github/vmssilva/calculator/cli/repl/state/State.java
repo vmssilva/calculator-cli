@@ -8,7 +8,7 @@ import com.github.vmssilva.calculator.cli.repl.style.Theme;
 public class State {
 
   public final KeyMapper mapper;
-  public final History history;
+  public History history;
   public final StringBuilder buffer = new StringBuilder();
   public Theme theme = new DefaultTheme();
 

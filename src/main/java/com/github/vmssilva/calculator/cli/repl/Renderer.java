@@ -116,6 +116,6 @@ public class Renderer {
       symbolColor = state.theme.errorColor();
     }
 
-    return symbolColor.ansi() + symbol + " " + Color.RESET.ansi() + state.theme.prompt();
+    return symbolColor.ansi() + (symbol.isEmpty() ? "" : symbol + " ") + Color.RESET.ansi() + state.theme.prompt();
   }
 }

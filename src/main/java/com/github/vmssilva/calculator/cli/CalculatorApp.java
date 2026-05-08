@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.github.vmssilva.calculator.cli.repl.History;
 import com.github.vmssilva.calculator.cli.repl.Key;
 import com.github.vmssilva.calculator.cli.repl.Renderer;
 import com.github.vmssilva.calculator.cli.repl.command.Command;
@@ -24,7 +25,7 @@ import com.github.vmssilva.calculator.engine.std.value.Value;
 
 public class CalculatorApp {
 
-  private static final ApplicationContext context = new ApplicationContext();
+  private static ApplicationContext context = new ApplicationContext();
   private static final CalculatorRuntime runtime = new CalculatorRuntime();
 
   private static final Terminal terminal = new UnixTerminal();
@@ -81,11 +82,11 @@ public class CalculatorApp {
             result = l.unwrap().stream().map(m -> m.unwrap().toString()).collect(Collectors.joining("\r\n"));
           }
 
-          // session.out().setColor(state.theme.successColor());
+          session.out().setColor(state.theme.successColor());
           session.out().write("\n");
           session.out().clearLine();
           session.out().write(result + "\n");
-          // session.out().setColor(Color.RESET);
+          session.out().setColor(Color.RESET);
 
         } catch (Exception e) {
           state.isError = true;
@@ -116,15 +117,20 @@ public class CalculatorApp {
     switch (input.substring(1)) {
       case "q", "quit", "exit" -> exit(0, "Bye!");
       case "clear" -> session.out().clearScreen();
+      case "reset" -> resetApplication();
       default -> handleExtendedCommand(input.substring(1));
     }
 
     return true;
   }
 
-  private static void handleExtendedCommand(String cmd) {
+  private static void resetApplication() {
+    state.resetInput();
+    state.history = new History();
+    context = new ApplicationContext();
+  }
 
-    System.out.println("CMD " + cmd);
+  private static void handleExtendedCommand(String cmd) {
 
     if (cmd.startsWith("theme ")) {
       String arg = cmd.substring("theme ".length()).trim();
@@ -133,7 +139,7 @@ public class CalculatorApp {
     }
 
     session.out()
-        .write("Unknown command\n")
+        .write("\r\n" + "Unknown command\n")
         .flush();
   }
 

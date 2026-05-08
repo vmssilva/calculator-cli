@@ -79,11 +79,12 @@ calc> 10 * (2 + 3)
 
 ## ⌨️ Navigation
 
+
 | Key        | Action           |
 | ---------- | ---------------- |
 | ↑ / ↓      | History          |
 | ← / →      | Move cursor      |
-| Backspace  | Delete character |
+| Backspace / Delete | Delete character |
 | Home / End | Line navigation  |
 | Enter      | Execute          |
 
@@ -94,9 +95,10 @@ calc> 10 * (2 + 3)
 Commands start with `\`:
 
 ```txt
-\exit   → exit REPL
-\q      → quit
-\clear  → clear screen
+\q     → quit
+\clear → clear screen
+\theme → set theme (ascii, unicode | default)
+\reset → reset calc
 ```
 
 ---
@@ -119,7 +121,7 @@ calc> sqrt(144)
 
 ```txt
 calc> a = 10
-0
+10
 
 calc> a + 5
 15
@@ -143,7 +145,7 @@ calc> ((x) -> (y) -> x * y)(10)(2)
 
 * Last expression is always returned
 * `;` separates multiple expressions
-* Assignments return `0`
+* Assignments returns the value of the assigned variable
 * Functions and lambdas are first-class values
 * Built-in functions expose signature when referenced
 

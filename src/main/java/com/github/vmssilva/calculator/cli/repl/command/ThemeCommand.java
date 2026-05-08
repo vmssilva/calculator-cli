@@ -16,7 +16,7 @@ public class ThemeCommand implements Command {
 
     switch (arg) {
       case "ascii" -> context.state().setTheme(new AsciiTheme());
-      case "unicode" -> context.state().setTheme(new DefaultTheme());
+      case "unicode", "default" -> context.state().setTheme(new DefaultTheme());
       default -> context.out()
           .write("Unknown theme: " + arg + "\n")
           .flush();
