@@ -5,7 +5,6 @@ import java.util.function.Function;
 import com.github.vmssilva.calculator.cli.repl.state.State;
 import com.github.vmssilva.calculator.cli.repl.style.Color;
 import com.github.vmssilva.calculator.cli.repl.terminal.TerminalOutput;
-import com.github.vmssilva.calculator.engine.std.value.FunctionValue;
 import com.github.vmssilva.calculator.engine.std.value.ListValue;
 import com.github.vmssilva.calculator.engine.std.value.StringValue;
 import com.github.vmssilva.calculator.engine.std.value.Value;
@@ -86,11 +85,13 @@ public class Renderer {
       return;
     }
 
-    String value = evaluated.unwrap().toString();
+    String value = evaluated.toString();
 
-    if (evaluated instanceof FunctionValue fn) {
-      value = fn.toString();
-    }
+    if (value.contains("\n"))
+      value = value.split("\n")[0];
+
+    if (value.length() > 20)
+      value = value.substring(0, 20) + "...";
 
     out.saveCursor()
         .moveCursor(row, col)
